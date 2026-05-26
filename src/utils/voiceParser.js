@@ -218,7 +218,7 @@ function capitalizeWords(str) {
  * @returns {Object} Parsed fields { distance, duration, avgHeartRate, totalSteps, preWorkoutNotes }
  */
 export function parseRunningVoice(transcript) {
-  if (!transcript) return { distance: null, duration: null, avgHeartRate: null, totalSteps: null, preWorkoutNotes: null }
+  if (!transcript) return { distance: null, duration: null, avgPace: null, avgHeartRate: null, totalSteps: null, preWorkoutNotes: null }
 
   const text = transcript.toLowerCase().trim()
   
@@ -251,9 +251,48 @@ export function parseRunningVoice(transcript) {
     preWorkoutNotes = notesMatch[1].trim()
   }
 
+  // 6. Avg Pace
+  let avgPace = null
+  const paceKeywords = ['pace', 'ritme', 'kecepatan']
+  for (const kw of paceKeywords) {
+    const idx = text.indexOf(kw)
+    if (idx !== -1) {
+      const after = text.substring(idx + kw.length).trim()
+      const minsPace = getNumberBeforeKeyword(after, 'menit') || getNumberBeforeKeyword(after, 'minute') || getNumberBeforeKeyword(after, 'min')
+      const secsPace = getNumberBeforeKeyword(after, 'detik') || getNumberBeforeKeyword(after, 'second') || getNumberBeforeKeyword(after, 'sec')
+      
+      if (minsPace !== null) {
+        if (secsPace !== null) {
+          avgPace = `${minsPace}'${String(secsPace).padStart(2, '0')}"`
+        } else {
+          avgPace = `${minsPace}'00"`
+        }
+      } else {
+        const firstNum = parseStartOfTextAsNumber(after)
+        if (firstNum !== null) {
+          const remainingText = after.replace(/^[a-zA-Z0-9.,\s]+?(?=\s|$)/, '').trim()
+          const secondNum = parseStartOfTextAsNumber(remainingText)
+          if (secondNum !== null && secondNum < 60 && !remainingText.includes('menit') && !remainingText.includes('detik')) {
+            avgPace = `${firstNum}'${String(secondNum).padStart(2, '0')}"`
+          } else {
+            if (firstNum % 1 !== 0) {
+              const wholeMins = Math.floor(firstNum)
+              const fractionSecs = Math.round((firstNum - wholeMins) * 60)
+              avgPace = `${wholeMins}'${String(fractionSecs).padStart(2, '0')}"`
+            } else {
+              avgPace = `${firstNum}'00"`
+            }
+          }
+        }
+      }
+      if (avgPace) break
+    }
+  }
+
   return {
     distance,
     duration,
+    avgPace,
     avgHeartRate,
     totalSteps,
     preWorkoutNotes,

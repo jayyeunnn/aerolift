@@ -40,6 +40,7 @@ export default function RunningForm({ log, onSuccess }) {
       ...prev,
       ...(parsed.distance !== null && { distance: String(parsed.distance) }),
       ...(parsed.duration !== null && { duration: parsed.duration }),
+      ...(parsed.avgPace !== null && { avg_pace: parsed.avgPace }),
       ...(parsed.avgHeartRate !== null && { avg_heart_rate: String(parsed.avgHeartRate) }),
       ...(parsed.totalSteps !== null && { total_steps: String(parsed.totalSteps) }),
       ...(parsed.preWorkoutNotes !== null && { pre_workout_notes: parsed.preWorkoutNotes }),
@@ -53,6 +54,9 @@ export default function RunningForm({ log, onSuccess }) {
       )}
       {parsed.duration !== null && (
         <div>Durasi: <span className="text-white font-bold">{parsed.duration}</span></div>
+      )}
+      {parsed.avgPace !== null && (
+        <div>Pace: <span className="text-white font-bold">{parsed.avgPace}</span></div>
       )}
       {parsed.avgHeartRate !== null && (
         <div>Heart Rate: <span className="text-white font-bold">{parsed.avgHeartRate} bpm</span></div>
@@ -192,7 +196,7 @@ export default function RunningForm({ log, onSuccess }) {
         renderPreview={renderRunningPreview}
         title="Catat Sesi Lari dengan Suara"
         subtitle="Sebutkan nominal jarak, durasi, heart rate, total langkah, dan catatan sesi lari Anda."
-        exampleText="jarak lima kilometer waktu tiga puluh menit heart rate seratus empat puluh"
+        exampleText="jarak lima kilometer waktu tiga puluh menit pace lima tiga puluh heart rate seratus empat puluh langkah enam ribu catatan lari pagi"
         brandColor="#c3f400"
       />
 
