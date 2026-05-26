@@ -196,7 +196,7 @@ export default function RunningForm({ log, onSuccess }) {
         renderPreview={renderRunningPreview}
         title="Catat Sesi Lari dengan Suara"
         subtitle="Sebutkan nominal jarak, durasi, heart rate, total langkah, dan catatan sesi lari Anda."
-        exampleText="jarak lima kilometer waktu tiga puluh menit pace lima tiga puluh heart rate seratus empat puluh langkah enam ribu catatan lari pagi"
+        exampleText="jarak lima kilometer waktu tiga puluh menit ritme kecepatan lima tiga puluh detak jantung seratus empat puluh langkah enam ribu catatan lari pagi"
         brandColor="#c3f400"
       />
 

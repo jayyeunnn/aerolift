@@ -253,7 +253,7 @@ export function parseRunningVoice(transcript) {
 
   // 6. Avg Pace
   let avgPace = null
-  const paceKeywords = ['pace', 'ritme', 'kecepatan']
+  const paceKeywords = ['ritme kecepatan', 'pace', 'ritme', 'kecepatan']
   for (const kw of paceKeywords) {
     const idx = text.indexOf(kw)
     if (idx !== -1) {
