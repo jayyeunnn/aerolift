@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
-import { useSpeechRecognition } from '../../hooks/useSpeechRecognition'
 import { parseGymVoice } from '../../utils/voiceParser'
+import VoiceInputModal from '../ui/VoiceInputModal'
 import { applyWatermark, uploadWatermarkedImage } from '../../utils/canvasWatermark'
 import { enqueueOperation } from '../../utils/offlineQueue'
 import { useOfflineStore } from '../../stores/offlineStore'
@@ -40,39 +40,47 @@ export default function GymForm({ log, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Voice input for adding exercises
-  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } =
-    useSpeechRecognition({
-      onResult: (finalTranscript) => {
-        const parsed = parseGymVoice(finalTranscript)
-        if (parsed.name || parsed.sets || parsed.reps || parsed.weight) {
-          const newExercise = {
-            name: parsed.name || '',
-            sets: parsed.sets ? String(parsed.sets) : '',
-            reps: parsed.reps ? String(parsed.reps) : '',
-            weight: parsed.weight ? String(parsed.weight) : '',
-          }
-          setExercises((prev) => {
-            // Fill the last empty row, or add a new one
-            const lastIdx = prev.length - 1
-            if (prev[lastIdx] && !prev[lastIdx].name) {
-              const updated = [...prev]
-              updated[lastIdx] = newExercise
-              return updated
-            }
-            return [...prev, newExercise]
-          })
-          addToast('Latihan ditambahkan dari suara!', 'success')
-        }
-      },
-    })
+  // Voice input modal state
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false)
 
-  // Show voice recognition error toast
-  useEffect(() => {
-    if (voiceError) {
-      addToast(voiceError, 'error')
+  const handleVoiceResult = (parsed) => {
+    if (parsed.name || parsed.sets || parsed.reps || parsed.weight) {
+      const newExercise = {
+        name: parsed.name || '',
+        sets: parsed.sets ? String(parsed.sets) : '',
+        reps: parsed.reps ? String(parsed.reps) : '',
+        weight: parsed.weight ? String(parsed.weight) : '',
+      }
+      setExercises((prev) => {
+        // Fill the last empty row, or add a new one
+        const lastIdx = prev.length - 1
+        if (prev[lastIdx] && !prev[lastIdx].name) {
+          const updated = [...prev]
+          updated[lastIdx] = newExercise
+          return updated
+        }
+        return [...prev, newExercise]
+      })
+      addToast('Latihan ditambahkan dari suara!', 'success')
     }
-  }, [voiceError, addToast])
+  }
+
+  const renderGymPreview = (parsed) => (
+    <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 text-xs font-medium text-surface-300">
+      {parsed.name && (
+        <div className="col-span-2">Latihan: <span className="text-white font-bold">{parsed.name}</span></div>
+      )}
+      {parsed.sets !== null && (
+        <div>Set: <span className="text-white">{parsed.sets} set</span></div>
+      )}
+      {parsed.reps !== null && (
+        <div>Repetisi: <span className="text-white">{parsed.reps} rep</span></div>
+      )}
+      {parsed.weight !== null && (
+        <div>Beban: <span className="text-white">{parsed.weight} kg</span></div>
+      )}
+    </div>
+  )
 
   const handleExerciseChange = (index, updated) => {
     setExercises((prev) => {
@@ -195,26 +203,23 @@ export default function GymForm({ log, onSuccess }) {
   return (
     <div className="flex flex-col animate-fade-in">
       <VoiceButton
-        isListening={isListening}
-        onStart={startListening}
-        onStop={stopListening}
-        isSupported={isSupported}
+        isListening={false}
+        onStart={() => setIsVoiceModalOpen(true)}
+        onStop={() => {}}
         className="mb-4"
       />
 
-      {/* Voice transcript */}
-      {isListening && (
-        <div className="mb-4 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 animate-fade-in">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-xs font-semibold text-red-400 uppercase tracking-wider">Mendengarkan...</span>
-          </div>
-          <p className="text-sm text-surface-300">{transcript || 'Ucapkan latihan Anda...'}</p>
-          <p className="text-xs text-surface-500 mt-1">
-            Contoh: "bench press 3 set 10 rep 60 kilo"
-          </p>
-        </div>
-      )}
+      <VoiceInputModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onResult={handleVoiceResult}
+        onParse={parseGymVoice}
+        renderPreview={renderGymPreview}
+        title="Tambah Latihan dengan Suara"
+        subtitle="Sebutkan nama latihan, jumlah set, repetisi, dan beban latihan Anda."
+        exampleText="bench press empat set dua belas repetisi berat delapan puluh kilo"
+        brandColor="#38bdf8"
+      />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Routine selector */}

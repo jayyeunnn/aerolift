@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
-import { useSpeechRecognition } from '../../hooks/useSpeechRecognition'
 import { parseRunningVoice } from '../../utils/voiceParser'
+import VoiceInputModal from '../ui/VoiceInputModal'
 import { applyWatermark, uploadWatermarkedImage } from '../../utils/canvasWatermark'
 import { enqueueOperation } from '../../utils/offlineQueue'
 import { useOfflineStore } from '../../stores/offlineStore'
@@ -32,29 +32,39 @@ export default function RunningForm({ log, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Voice input
-  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } =
-    useSpeechRecognition({
-      onResult: (finalTranscript) => {
-        const parsed = parseRunningVoice(finalTranscript)
-        setForm((prev) => ({
-          ...prev,
-          ...(parsed.distance !== null && { distance: String(parsed.distance) }),
-          ...(parsed.duration !== null && { duration: parsed.duration }),
-          ...(parsed.avgHeartRate !== null && { avg_heart_rate: String(parsed.avgHeartRate) }),
-          ...(parsed.totalSteps !== null && { total_steps: String(parsed.totalSteps) }),
-          ...(parsed.preWorkoutNotes !== null && { pre_workout_notes: parsed.preWorkoutNotes }),
-        }))
-        addToast('Data suara berhasil diproses!', 'success')
-      },
-    })
+  // Voice input modal state
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false)
 
-  // Show voice recognition error toast
-  useEffect(() => {
-    if (voiceError) {
-      addToast(voiceError, 'error')
-    }
-  }, [voiceError, addToast])
+  const handleVoiceResult = (parsed) => {
+    setForm((prev) => ({
+      ...prev,
+      ...(parsed.distance !== null && { distance: String(parsed.distance) }),
+      ...(parsed.duration !== null && { duration: parsed.duration }),
+      ...(parsed.avgHeartRate !== null && { avg_heart_rate: String(parsed.avgHeartRate) }),
+      ...(parsed.totalSteps !== null && { total_steps: String(parsed.totalSteps) }),
+      ...(parsed.preWorkoutNotes !== null && { pre_workout_notes: parsed.preWorkoutNotes }),
+    }))
+  }
+
+  const renderRunningPreview = (parsed) => (
+    <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 text-xs font-medium text-surface-300">
+      {parsed.distance !== null && (
+        <div>Jarak: <span className="text-white font-bold">{parsed.distance} km</span></div>
+      )}
+      {parsed.duration !== null && (
+        <div>Durasi: <span className="text-white font-bold">{parsed.duration}</span></div>
+      )}
+      {parsed.avgHeartRate !== null && (
+        <div>Heart Rate: <span className="text-white font-bold">{parsed.avgHeartRate} bpm</span></div>
+      )}
+      {parsed.totalSteps !== null && (
+        <div>Langkah: <span className="text-white font-bold">{parsed.totalSteps}</span></div>
+      )}
+      {parsed.preWorkoutNotes && (
+        <div className="col-span-2 mt-1">Catatan: <span className="text-white italic">"{parsed.preWorkoutNotes}"</span></div>
+      )}
+    </div>
+  )
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -168,26 +178,23 @@ export default function RunningForm({ log, onSuccess }) {
   return (
     <div className="flex flex-col animate-fade-in">
       <VoiceButton
-        isListening={isListening}
-        onStart={startListening}
-        onStop={stopListening}
-        isSupported={isSupported}
+        isListening={false}
+        onStart={() => setIsVoiceModalOpen(true)}
+        onStop={() => {}}
         className="mb-4"
       />
 
-      {/* Voice transcript display */}
-      {isListening && (
-        <div className="mb-4 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 animate-fade-in">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-xs font-semibold text-red-400 uppercase tracking-wider">Mendengarkan...</span>
-          </div>
-          <p className="text-sm text-surface-300">{transcript || 'Ucapkan data lari Anda...'}</p>
-          <p className="text-xs text-surface-500 mt-1">
-            Contoh: "jarak 5 kilometer waktu 30 menit heart rate 145"
-          </p>
-        </div>
-      )}
+      <VoiceInputModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onResult={handleVoiceResult}
+        onParse={parseRunningVoice}
+        renderPreview={renderRunningPreview}
+        title="Catat Sesi Lari dengan Suara"
+        subtitle="Sebutkan nominal jarak, durasi, heart rate, total langkah, dan catatan sesi lari Anda."
+        exampleText="jarak lima kilometer waktu tiga puluh menit heart rate seratus empat puluh"
+        brandColor="#c3f400"
+      />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Row 1: Distance + Duration */}

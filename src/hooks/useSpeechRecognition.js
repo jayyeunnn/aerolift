@@ -21,10 +21,15 @@ export function useSpeechRecognition(options = {}) {
   const [error, setError] = useState(null)
   const recognitionRef = useRef(null)
   const onResultRef = useRef(onResult)
+  const transcriptRef = useRef('')
 
   useEffect(() => {
     onResultRef.current = onResult
   }, [onResult])
+
+  useEffect(() => {
+    transcriptRef.current = transcript
+  }, [transcript])
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -73,18 +78,15 @@ export function useSpeechRecognition(options = {}) {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          finalTranscript += result[0].transcript
+          finalTranscript += result[0].transcript + ' '
         } else {
           interimTranscript += result[0].transcript
         }
       }
 
-      const currentTranscript = finalTranscript || interimTranscript
+      const currentTranscript = (finalTranscript + interimTranscript).trim()
+      transcriptRef.current = currentTranscript
       setTranscript(currentTranscript)
-
-      if (finalTranscript && onResultRef.current) {
-        onResultRef.current(finalTranscript)
-      }
     }
 
     recognition.onerror = (event) => {
@@ -111,10 +113,15 @@ export function useSpeechRecognition(options = {}) {
 
     recognition.onend = () => {
       setIsListening(false)
+      // Call onResult with the final accumulated transcript when recognition ends
+      if (onResultRef.current && transcriptRef.current.trim()) {
+        onResultRef.current(transcriptRef.current.trim())
+      }
     }
 
     recognitionRef.current = recognition
     setTranscript('')
+    transcriptRef.current = ''
     setError(null)
 
     try {
@@ -140,4 +147,5 @@ export function useSpeechRecognition(options = {}) {
     error,
   }
 }
+
 
