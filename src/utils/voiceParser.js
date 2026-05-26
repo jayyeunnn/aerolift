@@ -275,7 +275,30 @@ export function parseRunningVoice(transcript) {
           if (secondNum !== null && secondNum < 60 && !remainingText.includes('menit') && !remainingText.includes('detik')) {
             avgPace = `${firstNum}'${String(secondNum).padStart(2, '0')}"`
           } else {
-            if (firstNum % 1 !== 0) {
+            if (Number.isInteger(firstNum) && firstNum >= 100 && firstNum <= 2000) {
+              const strNum = String(firstNum)
+              if (strNum.length === 3) {
+                const minsPart = strNum[0]
+                const secsPart = strNum.substring(1)
+                const secsVal = parseInt(secsPart, 10)
+                if (secsVal < 60) {
+                  avgPace = `${minsPart}'${secsPart}"`
+                } else {
+                  avgPace = `${firstNum}'00"`
+                }
+              } else if (strNum.length === 4) {
+                const minsPart = strNum.substring(0, 2)
+                const secsPart = strNum.substring(2)
+                const secsVal = parseInt(secsPart, 10)
+                if (secsVal < 60) {
+                  avgPace = `${minsPart}'${secsPart}"`
+                } else {
+                  avgPace = `${firstNum}'00"`
+                }
+              } else {
+                avgPace = `${firstNum}'00"`
+              }
+            } else if (firstNum % 1 !== 0) {
               const wholeMins = Math.floor(firstNum)
               const fractionSecs = Math.round((firstNum - wholeMins) * 60)
               avgPace = `${wholeMins}'${String(fractionSecs).padStart(2, '0')}"`
