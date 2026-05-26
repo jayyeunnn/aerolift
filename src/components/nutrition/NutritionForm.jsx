@@ -78,16 +78,7 @@ export default function NutritionForm({ log, onSuccess }) {
   }
 
   return (
-    <GlassCard className="animate-fade-in">
-      {!log && (
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand">
-            <span className="material-symbols-rounded">restaurant</span>
-          </div>
-          <h2 className="font-bold text-lg text-white">Catat Makanan</h2>
-        </div>
-      )}
-
+    <div className="flex flex-col animate-fade-in">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           id="nutrition-food-name"
@@ -122,6 +113,6 @@ export default function NutritionForm({ log, onSuccess }) {
           {log ? 'Perbarui Catatan Makanan' : 'Simpan'}
         </Button>
       </form>
-    </GlassCard>
+    </div>
   )
 }

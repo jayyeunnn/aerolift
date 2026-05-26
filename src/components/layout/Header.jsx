@@ -47,7 +47,7 @@ export default function Header() {
 
     headerContent = (
       <div className="flex items-center h-12">
-        <h1 className="text-2xl font-extrabold tracking-tight text-white">
+        <h1 className="text-2xl font-extrabold tracking-tight text-brand">
           {title}
         </h1>
       </div>

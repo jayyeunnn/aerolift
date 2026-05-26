@@ -9,6 +9,23 @@ export default function GymHistory({ refreshKey, onEdit }) {
   const { addToast } = useToast()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('all')
+
+  const filteredLogs = logs.filter((log) => {
+    if (activeFilter === 'all') return true
+    const logDate = new Date(log.created_at)
+    const now = new Date()
+    const diffTime = Math.abs(now - logDate)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (activeFilter === 'week') {
+      return diffDays <= 7
+    }
+    if (activeFilter === 'month') {
+      return diffDays <= 30
+    }
+    return true
+  })
 
   const fetchLogs = async () => {
     if (!user) return
@@ -85,9 +102,42 @@ export default function GymHistory({ refreshKey, onEdit }) {
       <h3 className="text-xs font-bold text-surface-500 uppercase tracking-wider">
         Riwayat Gym
       </h3>
-      {logs.map((log) => (
-        <GymCard key={log.id} log={log} onEdit={onEdit} onDelete={handleDelete} />
-      ))}
+
+      {/* Segmented Filter Control */}
+      <div className="flex gap-1 p-1 rounded-2xl bg-surface-900/60 border border-white/5">
+        {[
+          { id: 'all', label: 'Semua' },
+          { id: 'week', label: 'Minggu Ini' },
+          { id: 'month', label: 'Bulan Ini' }
+        ].map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => setActiveFilter(f.id)}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${
+              activeFilter === f.id
+                ? 'bg-brand text-black glow-brand'
+                : 'text-surface-400 hover:text-white'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {filteredLogs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <span className="material-symbols-rounded text-surface-700 mb-2" style={{ fontSize: '36px' }}>
+            filter_list_off
+          </span>
+          <p className="text-surface-400 text-sm font-medium">Tidak ada riwayat untuk periode ini</p>
+          <p className="text-surface-600 text-xs mt-0.5">Coba ganti filter atau catat sesi baru!</p>
+        </div>
+      ) : (
+        filteredLogs.map((log) => (
+          <GymCard key={log.id} log={log} onEdit={onEdit} onDelete={handleDelete} />
+        ))
+      )}
     </div>
   )
 }

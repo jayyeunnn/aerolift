@@ -1,14 +1,17 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import NutritionForm from '../components/nutrition/NutritionForm'
 import NutritionHistory from '../components/nutrition/NutritionHistory'
 import Modal from '../components/ui/Modal'
 
 export default function NutritionPage() {
   const [refreshKey, setRefreshKey] = useState(0)
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLog, setEditingLog] = useState(null)
 
   const handleSuccess = () => {
     setRefreshKey((k) => k + 1)
+    setIsFormOpen(false)
   }
 
   const handleEditSuccess = () => {
@@ -18,14 +21,38 @@ export default function NutritionPage() {
 
   return (
     <>
-      <p className="text-surface-400 text-sm mb-4 animate-fade-in">
+      <p className="text-surface-400 text-sm mb-6 animate-fade-in">
         Jurnal asupan makanan harianmu.
       </p>
 
-      <NutritionForm onSuccess={handleSuccess} />
-      <div className="mt-6">
-        <NutritionHistory refreshKey={refreshKey} onEdit={setEditingLog} />
-      </div>
+      <NutritionHistory refreshKey={refreshKey} onEdit={setEditingLog} />
+
+      {/* FAB */}
+      {createPortal(
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="fixed bottom-[100px] right-6 w-14 h-14 bg-brand text-black rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(195,244,0,0.4)] hover:scale-105 active:scale-95 transition-all z-40 animate-scale-in"
+        >
+          <span className="material-symbols-rounded" style={{ fontSize: '28px' }}>add</span>
+        </button>,
+        document.body
+      )}
+
+      {/* Modal Form */}
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        title={
+          <span className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand shrink-0">
+              <span className="material-symbols-rounded" style={{ fontSize: '20px' }}>restaurant</span>
+            </span>
+            <span>Catat Makanan</span>
+          </span>
+        }
+      >
+        <NutritionForm onSuccess={handleSuccess} />
+      </Modal>
 
       {/* Edit Modal Form */}
       <Modal
@@ -45,4 +72,3 @@ export default function NutritionPage() {
     </>
   )
 }
-
