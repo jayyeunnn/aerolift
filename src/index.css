@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+
+  /* Brand Neon Green */
+  --color-brand: #c3f400;
+  --color-brand-dim: #9bbd00;
+  --color-brand-glow: rgba(195, 244, 0, 0.2);
+
+  /* Dark surface palette */
+  --color-surface-950: #09090b;
+  --color-surface-900: #18181b;
+  --color-surface-800: #27272a;
+  --color-surface-700: #3f3f46;
+  --color-surface-600: #52525b;
+  --color-surface-500: #71717a;
+  --color-surface-400: #a1a1aa;
+  --color-surface-300: #d4d4d8;
+  --color-surface-200: #e4e4e7;
+  --color-surface-100: #f4f4f5;
+  --color-surface-50: #fafafa;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-surface-950);
+  color: var(--color-surface-100);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Light mode overrides */
+.light body,
+html.light body {
+  background-color: var(--color-surface-50);
+  color: var(--color-surface-900);
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-brand);
+  color: #000;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+/* ============================================================
+   GLASS CARD SYSTEM
+   ============================================================ */
+
+.glass-card {
+  background-color: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 32px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+}
+
+.light .glass-card {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
+}
+
+.micro-card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  border-radius: 20px;
+  transition: background-color 0.2s ease;
+}
+
+.micro-card:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.light .micro-card {
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.light .micro-card:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================================
+   BRAND GLOW EFFECTS
+   ============================================================ */
+
+.glow-brand {
+  box-shadow: 0 0 20px rgba(195, 244, 0, 0.3);
+}
+
+.glow-brand-lg {
+  box-shadow: 0 10px 30px rgba(195, 244, 0, 0.4);
+}
+
+.progress-glow {
+  box-shadow: 0 0 15px rgba(195, 244, 0, 0.5);
+}
+
+/* ============================================================
+   MATERIAL SYMBOLS HELPER
+   ============================================================ */
+
+.material-symbols-rounded {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  user-select: none;
+}
+
+.icon-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ============================================================
+   BOTTOM NAV SAFE AREA
+   ============================================================ */
+
+.pb-nav {
+  padding-bottom: 7rem;
+}
+
+/* ============================================================
+   TOAST ANIMATIONS
+   ============================================================ */
+
+.toast-enter {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.toast-exit {
+  animation: slideDown 0.3s ease-in reverse forwards;
+}
+
+/* ============================================================
+   INPUT FOCUS RING
+   ============================================================ */
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 244, 0, 0.3);
+}
+
+/* ============================================================
+   PAGE TRANSITION
+   ============================================================ */
+
+.page-enter {
+  animation: fadeIn 0.25s ease-out forwards;
+}
