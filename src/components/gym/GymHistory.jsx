@@ -4,7 +4,7 @@ import { supabase } from '../../config/supabase'
 import { useToast } from '../ui/Toast'
 import GymCard from './GymCard'
 
-export default function GymHistory({ refreshKey }) {
+export default function GymHistory({ refreshKey, onEdit }) {
   const { user } = useAuthStore()
   const { addToast } = useToast()
   const [logs, setLogs] = useState([])
@@ -86,7 +86,7 @@ export default function GymHistory({ refreshKey }) {
         Riwayat Gym
       </h3>
       {logs.map((log) => (
-        <GymCard key={log.id} log={log} onDelete={handleDelete} />
+        <GymCard key={log.id} log={log} onEdit={onEdit} onDelete={handleDelete} />
       ))}
     </div>
   )

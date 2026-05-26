@@ -32,7 +32,7 @@ const Input = forwardRef(function Input(
           ref={ref}
           type={type}
           className={`w-full rounded-2xl bg-surface-900/50 dark:bg-surface-900/50 border border-white/5 
-            px-4 py-3.5 text-white dark:text-white placeholder:text-surface-600 
+            px-4 py-3.5 text-white placeholder:text-surface-600 
             focus:border-brand/30 transition-colors
             ${icon ? 'pl-12' : ''} 
             ${error ? 'border-red-500/30' : ''} 

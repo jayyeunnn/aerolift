@@ -12,7 +12,7 @@ export default function MicroCard({ label, value, unit, icon, className = '' }) 
       <span className="text-surface-500 text-xs font-semibold uppercase tracking-wide">
         {label}
       </span>
-      <span className="text-white dark:text-white font-bold text-xl">
+      <span className="text-white font-bold text-xl">
         {value}
         {unit && (
           <span className="text-xs text-surface-500 ml-1">{unit}</span>

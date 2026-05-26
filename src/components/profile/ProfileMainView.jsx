@@ -1,5 +1,4 @@
 import { useAuthStore } from '../../stores/authStore'
-import { useThemeStore } from '../../stores/themeStore'
 import { useOfflineStore } from '../../stores/offlineStore'
 import GlassCard from '../ui/GlassCard'
 import Button from '../ui/Button'
@@ -9,7 +8,6 @@ import Button from '../ui/Button'
  */
 export default function ProfileMainView({ onNavigate, onLogout }) {
   const { user, profile } = useAuthStore()
-  const { isDark, toggleTheme } = useThemeStore()
   const { isOnline, pendingCount, syncNow, isSyncing } = useOfflineStore()
 
   const displayName = profile?.display_name || 'User'
@@ -91,27 +89,6 @@ export default function ProfileMainView({ onNavigate, onLogout }) {
 
       {/* Quick Settings */}
       <GlassCard className="w-full flex flex-col gap-3" padding="p-4">
-        {/* Theme toggle */}
-        <div className="flex items-center justify-between py-3 px-4 rounded-2xl bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-rounded text-surface-400" style={{ fontSize: '20px' }}>
-              {isDark ? 'dark_mode' : 'light_mode'}
-            </span>
-            <span className="text-sm text-surface-300 font-medium">Mode Gelap</span>
-          </div>
-          <button
-            id="profile-theme-toggle"
-            onClick={toggleTheme}
-            className={`w-12 h-7 rounded-full relative transition-colors duration-300 ${
-              isDark ? 'bg-brand' : 'bg-surface-600'
-            }`}
-          >
-            <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-1 transition-transform duration-300 ${
-              isDark ? 'translate-x-6' : 'translate-x-1'
-            }`} />
-          </button>
-        </div>
-
         {/* Online status */}
         <div className="flex items-center justify-between py-3 px-4 rounded-2xl bg-white/[0.02]">
           <div className="flex items-center gap-3">

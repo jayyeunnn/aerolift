@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition'
@@ -13,27 +13,27 @@ import Input from '../ui/Input'
 import Button from '../ui/Button'
 import VoiceButton from '../ui/VoiceButton'
 
-export default function RunningForm({ onSuccess }) {
+export default function RunningForm({ log, onSuccess }) {
   const { user } = useAuthStore()
   const isOnline = useOnlineStatus()
   const { refreshPendingCount } = useOfflineStore()
   const { addToast } = useToast()
 
   const [form, setForm] = useState({
-    distance: '',
-    duration: '',
-    avg_pace: '',
-    avg_heart_rate: '',
-    total_steps: '',
-    pre_workout_notes: '',
+    distance: log?.distance ? String(log.distance) : '',
+    duration: log?.duration || '',
+    avg_pace: log?.avg_pace || '',
+    avg_heart_rate: log?.avg_heart_rate ? String(log.avg_heart_rate) : '',
+    total_steps: log?.total_steps ? String(log.total_steps) : '',
+    pre_workout_notes: log?.pre_workout_notes || '',
   })
   const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState(log?.image_url || null)
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
 
   // Voice input
-  const { isListening, transcript, startListening, stopListening, isSupported } =
+  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } =
     useSpeechRecognition({
       onResult: (finalTranscript) => {
         const parsed = parseRunningVoice(finalTranscript)
@@ -48,6 +48,13 @@ export default function RunningForm({ onSuccess }) {
         addToast('Data suara berhasil diproses!', 'success')
       },
     })
+
+  // Show voice recognition error toast
+  useEffect(() => {
+    if (voiceError) {
+      addToast(voiceError, 'error')
+    }
+  }, [voiceError, addToast])
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -82,14 +89,25 @@ export default function RunningForm({ onSuccess }) {
 
     try {
       let imageUrl = ''
+      if (imagePreview) {
+        if (imageFile && isOnline) {
+          const statsList = []
+          if (form.avg_pace) statsList.push(`Pace: ${form.avg_pace}`)
+          if (form.avg_heart_rate) statsList.push(`HR: ${form.avg_heart_rate} bpm`)
+          if (form.total_steps) statsList.push(`Steps: ${form.total_steps}`)
 
-      // Watermark and upload image if present
-      if (imageFile && isOnline) {
-        const watermarkedBlob = await applyWatermark(imageFile, {
-          text: 'AeroLift',
-          subtitle: `Running • ${distance} km`,
-        })
-        imageUrl = await uploadWatermarkedImage(supabase, watermarkedBlob, user.id, 'running')
+          const watermarkedBlob = await applyWatermark(imageFile, {
+            text: 'AeroLift',
+            brandColor: '#c3f400', // neon green for running
+            subtitle: [
+              `Running • ${distance} km • ${form.duration || '—'}`,
+              statsList.join('  •  '),
+            ].filter(Boolean),
+          })
+          imageUrl = await uploadWatermarkedImage(supabase, watermarkedBlob, user.id, 'running')
+        } else {
+          imageUrl = log?.image_url || ''
+        }
       }
 
       const logData = {
@@ -103,26 +121,42 @@ export default function RunningForm({ onSuccess }) {
         image_url: imageUrl,
       }
 
-      if (isOnline) {
-        const { error } = await supabase.from('running_logs').insert(logData)
-        if (error) throw error
-        addToast('Sesi lari berhasil disimpan! 🏃', 'success')
+      if (log) {
+        // Edit mode
+        if (isOnline) {
+          const { error } = await supabase.from('running_logs').update(logData).eq('id', log.id)
+          if (error) throw error
+          addToast('Sesi lari berhasil diperbarui! 🏃', 'success')
+        } else {
+          await enqueueOperation({ table: 'running_logs', type: 'update', id: log.id, data: logData })
+          await refreshPendingCount()
+          addToast('Disimpan offline. Sesi akan diperbarui saat online.', 'info')
+        }
       } else {
-        await enqueueOperation({ table: 'running_logs', type: 'insert', data: logData })
-        await refreshPendingCount()
-        addToast('Disimpan offline. Akan disinkronkan saat online.', 'info')
+        // Create mode
+        if (isOnline) {
+          const { error } = await supabase.from('running_logs').insert(logData)
+          if (error) throw error
+          addToast('Sesi lari berhasil disimpan! 🏃', 'success')
+        } else {
+          await enqueueOperation({ table: 'running_logs', type: 'insert', data: logData })
+          await refreshPendingCount()
+          addToast('Disimpan offline. Akan disinkronkan saat online.', 'info')
+        }
       }
 
-      // Reset form
-      setForm({
-        distance: '',
-        duration: '',
-        avg_pace: '',
-        avg_heart_rate: '',
-        total_steps: '',
-        pre_workout_notes: '',
-      })
-      removeImage()
+      // Reset form if not editing
+      if (!log) {
+        setForm({
+          distance: '',
+          duration: '',
+          avg_pace: '',
+          avg_heart_rate: '',
+          total_steps: '',
+          pre_workout_notes: '',
+        })
+        removeImage()
+      }
       onSuccess?.()
     } catch (err) {
       addToast(`Gagal menyimpan: ${err.message}`, 'error')
@@ -132,23 +166,14 @@ export default function RunningForm({ onSuccess }) {
   }
 
   return (
-    <GlassCard className="animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand">
-            <span className="material-symbols-rounded">directions_run</span>
-          </div>
-          <h2 className="font-bold text-lg text-white">Catat Sesi Lari</h2>
-        </div>
-
-        {/* Voice input button */}
-        <VoiceButton
-          isListening={isListening}
-          onStart={startListening}
-          onStop={stopListening}
-          isSupported={isSupported}
-        />
-      </div>
+    <div className="flex flex-col animate-fade-in">
+      <VoiceButton
+        isListening={isListening}
+        onStart={startListening}
+        onStop={stopListening}
+        isSupported={isSupported}
+        className="mb-4"
+      />
 
       {/* Voice transcript display */}
       {isListening && (
@@ -280,9 +305,9 @@ export default function RunningForm({ onSuccess }) {
           icon="save"
           id="running-submit"
         >
-          Simpan Sesi Lari
+          {log ? 'Perbarui Sesi Lari' : 'Simpan Sesi Lari'}
         </Button>
       </form>
-    </GlassCard>
+    </div>
   )
 }

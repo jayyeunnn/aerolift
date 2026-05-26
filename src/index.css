@@ -39,13 +39,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Light mode overrides */
-.light body,
-html.light body {
-  background-color: var(--color-surface-50);
-  color: var(--color-surface-900);
-}
-
 /* Selection */
 ::selection {
   background-color: var(--color-brand);
@@ -79,12 +72,6 @@ html.light body {
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
 }
 
-.light .glass-card {
-  background-color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
-}
-
 .micro-card {
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.02);
@@ -94,15 +81,6 @@ html.light body {
 
 .micro-card:hover {
   background-color: rgba(255, 255, 255, 0.06);
-}
-
-.light .micro-card {
-  background-color: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.light .micro-card:hover {
-  background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* ============================================================

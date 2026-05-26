@@ -5,7 +5,7 @@ import { getTodayRange } from '../../utils/formatters'
 import { useToast } from '../ui/Toast'
 import NutritionCard from './NutritionCard'
 
-export default function NutritionHistory({ refreshKey }) {
+export default function NutritionHistory({ refreshKey, onEdit }) {
   const { user } = useAuthStore()
   const { addToast } = useToast()
   const [logs, setLogs] = useState([])
@@ -96,7 +96,7 @@ export default function NutritionHistory({ refreshKey }) {
 
       <div className="flex flex-col gap-2">
         {logs.map((log) => (
-          <NutritionCard key={log.id} log={log} onDelete={handleDelete} />
+          <NutritionCard key={log.id} log={log} onEdit={onEdit} onDelete={handleDelete} />
         ))}
       </div>
     </div>

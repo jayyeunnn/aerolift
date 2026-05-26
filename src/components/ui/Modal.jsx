@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 /**
- * Bottom sheet / modal overlay
+ * Bottom sheet / modal overlay (using React Portal)
  */
 export default function Modal({
   isOpen,
@@ -41,25 +42,21 @@ export default function Modal({
     full: 'max-w-full mx-4',
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+  const modalRoot = document.getElementById('modal-root') || document.body
+
+  const content = (
+    <div className="fixed inset-0 z-[60] overflow-y-auto flex justify-center items-end sm:items-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal content */}
       <div
         className={`relative w-full ${sizes[size]} bg-surface-900 border border-white/5 
-          rounded-t-[32px] sm:rounded-[32px] p-6 animate-slide-up 
-          max-h-[85vh] overflow-y-auto`}
+          rounded-[32px] p-6 animate-scale-in shadow-2xl z-10 my-4 sm:my-8 max-h-[80dvh] sm:max-h-[85dvh] overflow-y-auto`}
       >
-        {/* Handle bar (mobile) */}
-        <div className="sm:hidden flex justify-center mb-4">
-          <div className="w-12 h-1.5 bg-surface-700 rounded-full" />
-        </div>
-
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between mb-6">
@@ -77,4 +74,7 @@ export default function Modal({
       </div>
     </div>
   )
+
+  return createPortal(content, modalRoot)
 }
+

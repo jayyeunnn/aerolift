@@ -20,13 +20,37 @@ export function useSpeechRecognition(options = {}) {
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState(null)
   const recognitionRef = useRef(null)
+  const onResultRef = useRef(onResult)
+
+  useEffect(() => {
+    onResultRef.current = onResult
+  }, [onResult])
 
   const isSupported =
     typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
 
+  // Cleanup on unmount
   useEffect(() => {
-    if (!isSupported) return
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort()
+      }
+    }
+  }, [])
+
+  const startListening = useCallback(() => {
+    if (!isSupported) {
+      setError('Speech Recognition tidak didukung di browser ini.')
+      return
+    }
+
+    // Abort existing recognition if any
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort()
+      } catch (e) {}
+    }
 
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition
@@ -58,8 +82,8 @@ export function useSpeechRecognition(options = {}) {
       const currentTranscript = finalTranscript || interimTranscript
       setTranscript(currentTranscript)
 
-      if (finalTranscript && onResult) {
-        onResult(finalTranscript)
+      if (finalTranscript && onResultRef.current) {
+        onResultRef.current(finalTranscript)
       }
     }
 
@@ -90,35 +114,16 @@ export function useSpeechRecognition(options = {}) {
     }
 
     recognitionRef.current = recognition
-
-    return () => {
-      recognition.abort()
-    }
-  }, [isSupported, lang, continuous, onResult])
-
-  const startListening = useCallback(() => {
-    if (!isSupported || !recognitionRef.current) {
-      setError('Speech Recognition tidak didukung di browser ini.')
-      return
-    }
-
     setTranscript('')
     setError(null)
 
     try {
-      recognitionRef.current.start()
+      recognition.start()
     } catch (err) {
-      // Already started, restart
-      recognitionRef.current.stop()
-      setTimeout(() => {
-        try {
-          recognitionRef.current.start()
-        } catch (e) {
-          setError('Gagal memulai pengenalan suara.')
-        }
-      }, 100)
+      setError('Gagal memulai pengenalan suara.')
+      setIsListening(false)
     }
-  }, [isSupported])
+  }, [isSupported, lang, continuous])
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -135,3 +140,4 @@ export function useSpeechRecognition(options = {}) {
     error,
   }
 }
+

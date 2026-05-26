@@ -1,17 +1,22 @@
+import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
-import { useThemeStore } from '../../stores/themeStore'
 import { useOfflineStore } from '../../stores/offlineStore'
 
 export default function Header() {
   const { profile, user } = useAuthStore()
-  const { isDark, toggleTheme } = useThemeStore()
   const { isOnline, pendingCount } = useOfflineStore()
+  const location = useLocation()
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'AeroLift'
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}&backgroundColor=27272a`
 
-  return (
-    <header className="flex justify-between items-center px-6 pt-8 pb-4 animate-slide-down">
+  const isDashboard = location.pathname === '/'
+
+  // Determine header content based on path
+  let headerContent = null
+
+  if (isDashboard) {
+    headerContent = (
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-brand/20 flex-shrink-0">
@@ -26,11 +31,32 @@ export default function Header() {
           <span className="text-surface-400 text-xs font-medium">
             Selamat datang kembali,
           </span>
-          <span className="font-bold text-lg text-white dark:text-white tracking-tight">
+          <span className="font-bold text-lg text-white tracking-tight">
             {displayName}
           </span>
         </div>
       </div>
+    )
+  } else {
+    let title = 'AeroLift'
+    if (location.pathname === '/running') title = 'Riwayat Lari'
+    else if (location.pathname === '/gym') title = 'Riwayat Gym'
+    else if (location.pathname === '/profile') title = 'Profile'
+    else if (location.pathname === '/nutrition') title = 'Jurnal Nutrisi'
+    else if (location.pathname === '/add') title = 'Tambah Catatan'
+
+    headerContent = (
+      <div className="flex items-center h-12">
+        <h1 className="text-2xl font-extrabold tracking-tight text-white">
+          {title}
+        </h1>
+      </div>
+    )
+  }
+
+  return (
+    <header className="flex justify-between items-center px-6 pt-8 pb-4 animate-slide-down">
+      {headerContent}
 
       <div className="flex items-center gap-2">
         {/* Offline indicator */}
@@ -49,19 +75,8 @@ export default function Header() {
             </span>
           </div>
         )}
-
-        {/* Theme toggle */}
-        <button
-          onClick={toggleTheme}
-          id="theme-toggle"
-          className="w-10 h-10 rounded-full bg-surface-900 dark:bg-surface-900 border border-white/5 flex items-center justify-center text-surface-400 hover:text-white transition"
-          aria-label={isDark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}
-        >
-          <span className="material-symbols-rounded">
-            {isDark ? 'light_mode' : 'dark_mode'}
-          </span>
-        </button>
       </div>
     </header>
   )
 }
+

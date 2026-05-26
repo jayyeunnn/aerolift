@@ -41,17 +41,19 @@ export default function NutritionDonut() {
   return (
     <GlassCard className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '120ms' }}>
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="material-symbols-rounded text-brand" style={{ fontSize: '20px' }}>
-            restaurant
-          </span>
-          <h2 className="font-bold text-lg text-white">Nutrisi Harian</h2>
+        <div className="flex items-center gap-4 mb-1">
+          <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand">
+            <span className="material-symbols-rounded">restaurant</span>
+          </div>
+          <div>
+            <h2 className="font-bold text-lg text-white">Nutrisi Harian</h2>
+            <p className="text-surface-400 text-xs mt-0.5">
+              {total > 0 ? 'Rasio konsumsi hari ini' : 'Belum ada catatan hari ini'}
+            </p>
+          </div>
         </div>
-        <p className="text-surface-400 text-xs mb-4">
-          {total > 0 ? 'Rasio konsumsi hari ini' : 'Belum ada catatan hari ini'}
-        </p>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 mt-4">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-brand" />
             <span className="text-sm text-surface-300 font-medium">

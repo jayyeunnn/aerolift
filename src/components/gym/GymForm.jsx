@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition'
@@ -18,21 +18,30 @@ const ROUTINES = ['Push', 'Pull', 'Legs']
 
 const emptyExercise = () => ({ name: '', sets: '', reps: '', weight: '' })
 
-export default function GymForm({ onSuccess }) {
+export default function GymForm({ log, onSuccess }) {
   const { user } = useAuthStore()
   const isOnline = useOnlineStatus()
   const { refreshPendingCount } = useOfflineStore()
   const { addToast } = useToast()
 
-  const [routineName, setRoutineName] = useState('Push')
-  const [exercises, setExercises] = useState([emptyExercise()])
+  const [routineName, setRoutineName] = useState(log?.routine_name || 'Push')
+  const [exercises, setExercises] = useState(
+    log?.exercises
+      ? log.exercises.map((ex) => ({
+          name: ex.name,
+          sets: String(ex.sets),
+          reps: String(ex.reps),
+          weight: String(ex.weight),
+        }))
+      : [emptyExercise()]
+  )
   const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState(log?.image_url || null)
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
 
   // Voice input for adding exercises
-  const { isListening, transcript, startListening, stopListening, isSupported } =
+  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } =
     useSpeechRecognition({
       onResult: (finalTranscript) => {
         const parsed = parseGymVoice(finalTranscript)
@@ -57,6 +66,13 @@ export default function GymForm({ onSuccess }) {
         }
       },
     })
+
+  // Show voice recognition error toast
+  useEffect(() => {
+    if (voiceError) {
+      addToast(voiceError, 'error')
+    }
+  }, [voiceError, addToast])
 
   const handleExerciseChange = (index, updated) => {
     setExercises((prev) => {
@@ -104,13 +120,25 @@ export default function GymForm({ onSuccess }) {
 
     try {
       let imageUrl = ''
+      if (imagePreview) {
+        if (imageFile && isOnline) {
+          const exerciseLines = validExercises.slice(0, 4).map((ex) => `${ex.name} - ${ex.sets} set • ${ex.reps} rep • ${ex.weight} kg`)
+          if (validExercises.length > 4) {
+            exerciseLines.push(`+ ${validExercises.length - 4} latihan lainnya`)
+          }
 
-      if (imageFile && isOnline) {
-        const watermarkedBlob = await applyWatermark(imageFile, {
-          text: 'AeroLift',
-          subtitle: `${routineName} Day • ${validExercises.length} latihan`,
-        })
-        imageUrl = await uploadWatermarkedImage(supabase, watermarkedBlob, user.id, 'gym')
+          const watermarkedBlob = await applyWatermark(imageFile, {
+            text: 'AeroLift',
+            brandColor: '#38bdf8', // gym color: vibrant sky blue
+            subtitle: [
+              `${routineName} Day`,
+              ...exerciseLines
+            ],
+          })
+          imageUrl = await uploadWatermarkedImage(supabase, watermarkedBlob, user.id, 'gym')
+        } else {
+          imageUrl = log?.image_url || ''
+        }
       }
 
       const exercisesJson = validExercises.map((ex) => ({
@@ -127,19 +155,35 @@ export default function GymForm({ onSuccess }) {
         image_url: imageUrl,
       }
 
-      if (isOnline) {
-        const { error } = await supabase.from('gym_logs').insert(logData)
-        if (error) throw error
-        addToast('Sesi gym berhasil disimpan! 💪', 'success')
+      if (log) {
+        // Edit mode
+        if (isOnline) {
+          const { error } = await supabase.from('gym_logs').update(logData).eq('id', log.id)
+          if (error) throw error
+          addToast('Sesi gym berhasil diperbarui! 💪', 'success')
+        } else {
+          await enqueueOperation({ table: 'gym_logs', type: 'update', id: log.id, data: logData })
+          await refreshPendingCount()
+          addToast('Disimpan offline. Sesi akan diperbarui saat online.', 'info')
+        }
       } else {
-        await enqueueOperation({ table: 'gym_logs', type: 'insert', data: logData })
-        await refreshPendingCount()
-        addToast('Disimpan offline. Akan disinkronkan saat online.', 'info')
+        // Create mode
+        if (isOnline) {
+          const { error } = await supabase.from('gym_logs').insert(logData)
+          if (error) throw error
+          addToast('Sesi gym berhasil disimpan! 💪', 'success')
+        } else {
+          await enqueueOperation({ table: 'gym_logs', type: 'insert', data: logData })
+          await refreshPendingCount()
+          addToast('Disimpan offline. Akan disinkronkan saat online.', 'info')
+        }
       }
 
-      // Reset form
-      setExercises([emptyExercise()])
-      removeImage()
+      // Reset form if not editing
+      if (!log) {
+        setExercises([emptyExercise()])
+        removeImage()
+      }
       onSuccess?.()
     } catch (err) {
       addToast(`Gagal menyimpan: ${err.message}`, 'error')
@@ -149,22 +193,14 @@ export default function GymForm({ onSuccess }) {
   }
 
   return (
-    <GlassCard className="animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-surface-800 flex items-center justify-center text-white">
-            <span className="material-symbols-rounded">fitness_center</span>
-          </div>
-          <h2 className="font-bold text-lg text-white">Catat Sesi Gym</h2>
-        </div>
-
-        <VoiceButton
-          isListening={isListening}
-          onStart={startListening}
-          onStop={stopListening}
-          isSupported={isSupported}
-        />
-      </div>
+    <div className="flex flex-col animate-fade-in">
+      <VoiceButton
+        isListening={isListening}
+        onStart={startListening}
+        onStop={stopListening}
+        isSupported={isSupported}
+        className="mb-4"
+      />
 
       {/* Voice transcript */}
       {isListening && (
@@ -274,9 +310,9 @@ export default function GymForm({ onSuccess }) {
           icon="save"
           id="gym-submit"
         >
-          Simpan Sesi Gym
+          {log ? 'Perbarui Sesi Gym' : 'Simpan Sesi Gym'}
         </Button>
       </form>
-    </GlassCard>
+    </div>
   )
 }

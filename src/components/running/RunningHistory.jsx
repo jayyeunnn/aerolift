@@ -4,7 +4,7 @@ import { supabase } from '../../config/supabase'
 import { useToast } from '../ui/Toast'
 import RunningCard from './RunningCard'
 
-export default function RunningHistory({ refreshKey }) {
+export default function RunningHistory({ refreshKey, onEdit }) {
   const { user } = useAuthStore()
   const { addToast } = useToast()
   const [logs, setLogs] = useState([])
@@ -86,7 +86,7 @@ export default function RunningHistory({ refreshKey }) {
         Riwayat Lari
       </h3>
       {logs.map((log) => (
-        <RunningCard key={log.id} log={log} onDelete={handleDelete} />
+        <RunningCard key={log.id} log={log} onEdit={onEdit} onDelete={handleDelete} />
       ))}
     </div>
   )
